@@ -50,48 +50,47 @@ def create_model():
     conv8_313 = Conv2D(313, 1, name="conv8_313")(conv8_3norm)
 
     # For cross entropy: Convert last layer to 2D and activate with softmax
-    loss_1 = Reshape((64 * 64, 313))(conv8_313)
-    loss_2 = Activation(softmax)(loss_1)
+    loss_1 = Reshape((64 * 64, 313), name="loss_1_flatten")(conv8_313)
+    loss_2 = Activation(softmax, name="loss_1_softmax")(loss_1)
+    loss_3 = Reshape((64, 64, 313), name="loss_1_unflatten")(loss_2)
 
-    model = Model(bw_input, loss_2)
+    model = Model(bw_input, loss_3)
 
-    model.compile(optimizer="Adam", loss="binary_crossentropy")
+    model.compile(optimizer="Adam", loss="categorical_crossentropy")
     print(model.summary())
     return model
 
 
 def train_model(train_generator, test_generator):
     model = create_model()
-
     model.fit_generator(
         train_generator,
         epochs=100,
         validation_data=test_generator,
         callbacks=[
-            tensor_board("auto classifier"),
-            EarlyStopping(min_delta=0.001, patience=32)
+            tensor_board("colorizer"),
+            # EarlyStopping(min_delta=0.001, patience=32)
         ]
     )
 
 
+
 def train_and_test():
-    data_generator = ImageDataGenerator(
-        featurewise_center=True,
-        featurewise_std_normalization=True,
-        validation_split=0.3)
+    data_generator = ImageDataGenerator(validation_split=0.3)
 
     train_generator = DiscretizedImageIterator(
         str(Config.data_folder),
         data_generator,
         target_size=(256, 256),
-        batch_size=32,
+        batch_size=10,
+        shuffle=True,
         subset="training")
 
     test_generator = DiscretizedImageIterator(
         str(Config.data_folder),
         data_generator,
         target_size=(256, 256),
-        batch_size=32,
+        batch_size=10,
         subset="validation")
 
     train_model(train_generator, test_generator)
