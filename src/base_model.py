@@ -1,6 +1,7 @@
 from keras import Input, Model
 from keras.activations import relu, softmax
-from keras.callbacks import EarlyStopping
+from keras.callbacks import ModelCheckpoint
+from keras.engine.saving import load_model
 from keras.layers import Conv2D, BatchNormalization, Conv2DTranspose, Reshape, Activation
 from keras_preprocessing.image import ImageDataGenerator
 
@@ -61,18 +62,19 @@ def create_model():
     return model
 
 
-def train_model(train_generator, test_generator):
-    model = create_model()
+def train_model(train_generator, test_generator, model=None):
+    if model is None:
+        model = create_model()
+
     model.fit_generator(
         train_generator,
         epochs=100,
         validation_data=test_generator,
         callbacks=[
             tensor_board("colorizer"),
-            # EarlyStopping(min_delta=0.001, patience=32)
+            ModelCheckpoint(str(Config.checkpoint_dir), save_best_only=True)
         ]
     )
-
 
 
 def train_and_test():
@@ -93,7 +95,9 @@ def train_and_test():
         batch_size=10,
         subset="validation")
 
-    train_model(train_generator, test_generator)
+    # Resume training if checkpoint exists
+    model = load_model(str(Config.checkpoint_dir)) if Config.checkpoint_dir.is_file() else None
+    train_model(train_generator, test_generator, model)
 
 
 if __name__ == "__main__":
