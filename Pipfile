@@ -4,7 +4,6 @@ verify_ssl = true
 
 [dev-packages]
 coverage = "*"
-mypy = "*"
 
 [requires]
 python_version = "3.6"

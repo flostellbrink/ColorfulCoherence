@@ -5,12 +5,12 @@ from keras.engine.saving import load_model
 from keras.layers import Conv2D, BatchNormalization, Conv2DTranspose, Reshape, Activation
 from keras_preprocessing.image import ImageDataGenerator
 
-from src.discretized_image import DiscretizedImageIterator
+from src.binned_image_generator import BinnedImageGenerator
 from src.util.config import Config
 from src.util.util import tensor_board
 
 
-def create_model():
+def create_model()-> Model:
     bw_input = Input(shape=(256, 256, 1))
 
     conv1_1 = Conv2D(64, 3, name="conv1_1", padding="same", activation=relu)(bw_input)
@@ -62,10 +62,11 @@ def create_model():
     return model
 
 
-def train_model(train_generator, test_generator, model=None):
+def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedImageGenerator, model: Model=None):
     if model is None:
         model = create_model()
 
+    Config.model_folder.mkdir(parents=True, exist_ok=True)
     model.fit_generator(
         train_generator,
         epochs=100,
@@ -80,7 +81,7 @@ def train_model(train_generator, test_generator, model=None):
 def train_and_test():
     data_generator = ImageDataGenerator(validation_split=0.3)
 
-    train_generator = DiscretizedImageIterator(
+    train_generator = BinnedImageGenerator(
         str(Config.data_folder),
         data_generator,
         target_size=(256, 256),
@@ -88,7 +89,7 @@ def train_and_test():
         shuffle=True,
         subset="training")
 
-    test_generator = DiscretizedImageIterator(
+    test_generator = BinnedImageGenerator(
         str(Config.data_folder),
         data_generator,
         target_size=(256, 256),
