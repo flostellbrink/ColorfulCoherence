@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Union
+
 from keras import Model
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from src.util.config import Config
@@ -35,7 +37,9 @@ class Util:
         model.save(str(file))
 
 
-def latest_checkpoint(network: str) -> Path:
+def latest_checkpoint(network: str) -> Union[Path, None]:
     folder = Config.model_folder.joinpath(network)
-    latest_folder = sorted(folder.glob("*"), key=lambda f: int(f.name))[-1]
-    return sorted(latest_folder.glob("*"), key=lambda file: file.stat().st_mtime)[-1]
+    latest_folder = (sorted(folder.glob("*"), key=lambda f: int(f.name)) + [None])[-1]
+    if latest_folder is None:
+        return None
+    return (sorted(latest_folder.glob("*"), key=lambda file: file.stat().st_mtime) + [None])[-1]

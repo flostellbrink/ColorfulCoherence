@@ -1,5 +1,6 @@
 from keras.engine.saving import load_model
 from keras_preprocessing.image import ImageDataGenerator
+
 from src.binned_image_generator import BinnedImageGenerator
 from src.model import train_model
 from src.util.config import Config
@@ -12,7 +13,7 @@ def train_and_test():
     """
     # Resume training if checkpoint exists
     checkpoint_dir = latest_checkpoint("colorizer")
-    model = load_model(str(checkpoint_dir)) if checkpoint_dir.is_file() else None
+    model = load_model(str(checkpoint_dir)) if checkpoint_dir is not None else None
 
     # Initialize image generators
     data_generator = ImageDataGenerator(validation_split=0.3)

@@ -3,6 +3,7 @@ from keras.activations import relu, softmax
 from keras.layers import Conv2D, BatchNormalization, Conv2DTranspose, Reshape, Activation
 
 from src.binned_image_generator import BinnedImageGenerator
+from src.util.config import Config
 from src.util.util import Util
 
 
@@ -65,8 +66,10 @@ def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedIma
     util = Util("colorizer")
     model.fit_generator(
         train_generator,
-        epochs=100,
+        steps_per_epoch=len(train_generator),
+        epochs=Config.max_epochs,
         validation_data=test_generator,
+        validation_steps=len(test_generator),
         callbacks=[
             util.tensor_board(),
             util.model_checkpoint()
