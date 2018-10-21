@@ -7,7 +7,7 @@ from keras_preprocessing.image import ImageDataGenerator
 
 from src.binned_image_generator import BinnedImageGenerator
 from src.util.config import Config
-from src.util.util import tensor_board
+from src.util.util import Util, latest_checkpoint
 
 
 def create_model()-> Model:
@@ -66,19 +66,26 @@ def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedIma
     if model is None:
         model = create_model()
 
-    Config.model_folder.mkdir(parents=True, exist_ok=True)
+    util = Util("colorizer")
     model.fit_generator(
         train_generator,
         epochs=100,
         validation_data=test_generator,
         callbacks=[
-            tensor_board("colorizer"),
-            ModelCheckpoint(str(Config.checkpoint_dir), save_best_only=True)
+            util.tensor_board(),
+            util.model_checkpoint()
         ]
     )
 
+    util.save_model(model)
+
 
 def train_and_test():
+    # Resume training if checkpoint exists
+    checkpoint_dir = latest_checkpoint("colorizer")
+    model = load_model(str(checkpoint_dir)) if checkpoint_dir.is_file() else None
+
+    # Initialize image generators
     data_generator = ImageDataGenerator(validation_split=0.3)
 
     train_generator = BinnedImageGenerator(
@@ -96,8 +103,7 @@ def train_and_test():
         batch_size=10,
         subset="validation")
 
-    # Resume training if checkpoint exists
-    model = load_model(str(Config.checkpoint_dir)) if Config.checkpoint_dir.is_file() else None
+    # Start training
     train_model(train_generator, test_generator, model)
 
 

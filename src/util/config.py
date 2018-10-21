@@ -7,7 +7,7 @@ class Config:
     root_folder = Path(__file__).parent.parent.parent
     data_folder = root_folder.joinpath("data")
     model_folder = root_folder.joinpath("model")
-    checkpoint_dir = model_folder.joinpath("checkpoint.h5")
+    log_folder = root_folder.joinpath("logs")
     max_epochs = maxsize
 
 
