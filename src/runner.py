@@ -22,7 +22,7 @@ def train_and_test():
         str(Config.data_folder),
         data_generator,
         target_size=(256, 256),
-        batch_size=10,
+        batch_size=Config.batch_size,
         shuffle=True,
         subset="training")
 
@@ -30,7 +30,7 @@ def train_and_test():
         str(Config.data_folder),
         data_generator,
         target_size=(256, 256),
-        batch_size=10,
+        batch_size=Config.batch_size,
         subset="validation")
 
     # Start training

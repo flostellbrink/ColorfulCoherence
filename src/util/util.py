@@ -28,7 +28,7 @@ class Util:
         folder = Config.model_folder.joinpath(self.network).joinpath(str(self.latest_folder + 1))
         folder.mkdir(parents=True, exist_ok=True)
         file = folder.joinpath("checkpoint-{epoch:02d}-l:{loss:.2f}-vl:{val_loss:.2f}.h5")
-        return ModelCheckpoint(str(file), period=10)
+        return ModelCheckpoint(str(file), period=1  )
 
     def save_model(self, model: Model):
         folder = Config.model_folder.joinpath(self.network).joinpath(str(self.latest_folder + 1))

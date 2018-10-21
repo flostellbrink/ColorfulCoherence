@@ -1,6 +1,5 @@
 from os import environ
 from pathlib import Path
-from sys import maxsize
 
 
 class Config:
@@ -8,7 +7,8 @@ class Config:
     data_folder = root_folder.joinpath("data")
     model_folder = root_folder.joinpath("model")
     log_folder = root_folder.joinpath("logs")
-    max_epochs = maxsize
+    max_epochs = 100
+    batch_size = 10
 
 
 enable_gpu = True

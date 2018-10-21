@@ -14,6 +14,7 @@ if __name__ == "__main__":
     Config.data_folder = Path("/scratch/lt2316-h18-resources/coco")
     Config.model_folder = Path("/scratch/gusstefl/logs")
     Config.log_folder = Path("/scratch/gusstefl/logs")
+    Config.batch_size = 32
 
     # Run default training
     train_and_test()
