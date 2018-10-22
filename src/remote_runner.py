@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # Adjust paths
     Config.data_folder = Path("/scratch/lt2316-h18-resources/coco")
-    Config.model_folder = Path("/scratch/gusstefl/logs")
+    Config.model_folder = Path("/scratch/gusstefl/model")
     Config.log_folder = Path("/scratch/gusstefl/logs")
     Config.batch_size = 32
 
