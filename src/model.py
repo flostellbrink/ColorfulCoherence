@@ -61,6 +61,7 @@ def create_model()-> Model:
 
 def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedImageGenerator, model: Model=None):
     if model is None:
+        print("Creating fresh model...")
         model = create_model()
 
     util = Util("colorizer")

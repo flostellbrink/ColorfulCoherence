@@ -13,6 +13,7 @@ def train_and_test():
     """
     # Resume training if checkpoint exists
     checkpoint_dir = latest_checkpoint("colorizer")
+    print(f"Latest checkpoint: {checkpoint_dir}")
     model = load_model(str(checkpoint_dir)) if checkpoint_dir is not None else None
 
     # Initialize image generators
