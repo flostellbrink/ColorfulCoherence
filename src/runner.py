@@ -7,14 +7,16 @@ from src.util.config import Config
 from src.util.util import latest_checkpoint
 
 
-def train_and_test():
+def train_and_test(resume_training = False):
     """
     Train and test in default environment
     """
-    # Resume training if checkpoint exists
-    checkpoint_dir = latest_checkpoint("colorizer")
-    print(f"Latest checkpoint: {checkpoint_dir}")
-    model = load_model(str(checkpoint_dir)) if checkpoint_dir is not None else None
+    if resume_training:
+        checkpoint_dir = latest_checkpoint("colorizer")
+        print(f"Latest checkpoint: {checkpoint_dir}")
+        model = load_model(str(checkpoint_dir)) if checkpoint_dir is not None else None
+    else:
+        model = None
 
     # Initialize image generators
     data_generator = ImageDataGenerator(validation_split=0.3)
