@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Union
 
 from keras import Model
+from keras.backend import zeros_like
 from keras.callbacks import TensorBoard, ModelCheckpoint
 from src.util.config import Config
 
@@ -43,3 +44,7 @@ def latest_checkpoint(network: str) -> Union[Path, None]:
     if latest_folder is None:
         return None
     return (sorted(latest_folder.glob("*"), key=lambda file: file.stat().st_mtime) + [None])[-1]
+
+
+def zero_loss(y_true, y_pred):
+    return zeros_like(y_pred)
