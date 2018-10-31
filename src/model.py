@@ -1,16 +1,22 @@
 from keras import Input, Model
 from keras.activations import relu, softmax
-from keras.layers import Conv2D, BatchNormalization, Conv2DTranspose, Reshape, Activation
+from keras.backend import stop_gradient
+from keras.engine import Layer
+from keras.layers import Conv2D, BatchNormalization, Conv2DTranspose, Reshape, Activation, Lambda, UpSampling2D, \
+    Concatenate
+from tensorflow import convert_to_tensor, float32
 
 from src.binned_image_generator import BinnedImageGenerator
+from src.color_regularizer import ColorRegularizer
+from src.dist_to_lab import DistToLab
+from src.gradient_loss import gradient_loss
+from src.lab_bin_converter import index_to_lab
 from src.util.config import Config
-from src.util.util import Util
+from src.util.util import Util, zero_loss
 
 
-def create_model()-> Model:
-    bw_input = Input(shape=(256, 256, 1))
-
-    conv1_1 = Conv2D(64, 3, name="conv1_1", padding="same", activation=relu)(bw_input)
+def create_color_model(grayscale_input: Layer) -> Layer:
+    conv1_1 = Conv2D(64, 3, name="conv1_1", padding="same", activation=relu)(grayscale_input)
     conv1_2 = Conv2D(64, 3, name="conv1_2", padding="same", strides=2, activation=relu)(conv1_1)
     conv1_2norm = BatchNormalization(name="conv1_2norm")(conv1_2)
 
@@ -47,14 +53,52 @@ def create_model()-> Model:
     conv8_3norm = BatchNormalization(name="conv8_3norm")(conv8_3)
     conv8_313 = Conv2D(313, 1, name="conv8_313")(conv8_3norm)
 
-    # For cross entropy: Convert last layer to 2D and activate with softmax
-    loss_1 = Reshape((64 * 64, 313), name="loss_1_flatten")(conv8_313)
-    loss_2 = Activation(softmax, name="loss_1_softmax")(loss_1)
-    loss_3 = Reshape((64, 64, 313), name="loss_1_unflatten")(loss_2)
+    return conv8_313
 
-    model = Model(bw_input, loss_3)
 
-    model.compile(optimizer="Adam", loss="categorical_crossentropy")
+def create_coherence_model(grayscale_input: Layer, color_output: Layer)-> Layer:
+    conv1_1 = Conv2D(32, 3, name="coh_conv1_1", padding="same", activation=relu)(grayscale_input)
+    conv1_2 = Conv2D(32, 3, name="coh_conv1_2", padding="same", activation=relu)(conv1_1)
+    conv1_3 = Conv2D(32, 3, name="coh_conv1_3", padding="same", activation=relu)(conv1_2)
+    conv1_3norm = BatchNormalization(name="coh_conv1_2norm")(conv1_3)
+
+    # Set gradients to zero to prevent backpropagation into color model
+    stop_color_gradient = Lambda(lambda x: stop_gradient(x), name="stop_color_gradient")(color_output)
+    up_sample1_1 = UpSampling2D(2, name="up_sample1_1")(stop_color_gradient)
+    up_sample1_2 = UpSampling2D(2, name="up_sample1_2")(up_sample1_1)
+    up_sample1_2norm = BatchNormalization(name="up_sample1_2norm")(up_sample1_2)
+
+    concat = Concatenate(name="concat")([conv1_3norm, up_sample1_2norm])
+    conv2_1 = Conv2D(313, 3, name="coh_conv2_1")(concat)
+
+    return conv2_1
+
+
+def create_model()-> Model:
+    grayscale_input = Input(shape=(256, 256, 1))
+    dist_colorful = create_color_model(grayscale_input)
+    dist_coherent = create_coherence_model(grayscale_input, dist_colorful)
+
+    # For color cross entropy: Convert last color layer to 2D and activate with softmax
+    color_loss_1 = Reshape((64 * 64, 313), name="color_loss_1")(dist_colorful)
+    color_loss_2 = Activation(softmax, name="color_loss_2")(color_loss_1)
+    color_loss_3 = Reshape((64, 64, 313), name="color_loss_3")(color_loss_2)
+
+    # Regularizer to keep colors when optimizing coherence
+    color_regularizer = ColorRegularizer(name="color_regularizer")([dist_colorful, dist_coherent])
+
+    # Create lab space images (for comparison and gradient loss)
+    color_map = convert_to_tensor(index_to_lab, dtype=float32)
+    lab_colorful = DistToLab(color_map, name="lab_colorful")([grayscale_input, dist_colorful])
+    lab_coherent = DistToLab(color_map, name="lab_coherent")([grayscale_input, dist_coherent])
+
+    model = Model(grayscale_input, [color_loss_3, color_regularizer, lab_coherent])
+    losses = {
+        "color_loss_3": "categorical_crossentropy",
+        "color_regularizer": zero_loss,
+        "lab_coherent": gradient_loss
+    }
+    model.compile(optimizer="Adam", loss=losses)
     print(model.summary())
     return model
 

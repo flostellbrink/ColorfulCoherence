@@ -47,7 +47,7 @@ class BinnedImageGenerator(DirectoryIterator):
         oob_batch = batch[oob_mask_cats]
 
         # Resample image and generate softmax style encoding
-        batch_y = zeros((batch.shape[0], 64, 64, 313))
+        distributions = zeros((batch.shape[0], 64, 64, 313))
         for batch_i in range(batch.shape[0]):
             for x in range(64):
                 for y in range(64):
@@ -55,8 +55,14 @@ class BinnedImageGenerator(DirectoryIterator):
                         for y_offset in [0, 1, 2, 3]:
                             category = batch_y_categories[batch_i, x * 4 + x_offset, y * 4 + y_offset]
                             assert (category != -1)
-                            batch_y[batch_i, x, y, category] += 1.0 / 16.0
+                            distributions[batch_i, x, y, category] += 1.0 / 16.0
 
+        batch_y = {
+            "color_loss_3": distributions,
+            "color_regularizer": [],
+            "lab_coherent": batch_lab
+        }
+        # TODO make sure lab in range -128,128
         return batch_x, batch_y
 
     def next(self):
