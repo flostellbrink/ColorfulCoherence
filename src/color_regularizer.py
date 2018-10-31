@@ -16,7 +16,8 @@ class ColorRegularizer(Layer):
         original = k.reshape(original, (-1, k.shape(original)[-1]))
         boosted = x[1]
         boosted = k.reshape(boosted, (-1, k.shape(boosted)[-1]))
-        boosted_indices = tf.stack([tf.range(boosted.shape[0], dtype=tf.int64), k.argmax(boosted, -1)], axis=-1)
+        argmax_indices = tf.argmax(boosted, axis=-1, output_type=tf.int32)
+        boosted_indices = tf.stack([tf.range(tf.shape(boosted)[0]), argmax_indices], axis=-1)
         original_lookup = tf.gather_nd(original, indices=boosted_indices)
         original_max = k.max(original, -1)
         loss = k.sum(1 - original_lookup / original_max)
