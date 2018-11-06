@@ -8,7 +8,7 @@ class Config:
     model_folder = root_folder.joinpath("model")
     log_folder = root_folder.joinpath("logs")
     max_epochs = 100
-    batch_size = 10
+    batch_size = 1
 
 
 enable_gpu = True
