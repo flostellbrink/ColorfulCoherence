@@ -1,5 +1,5 @@
 from keras_preprocessing.image import DirectoryIterator
-from numpy import array, zeros
+from numpy import array, zeros, empty
 from skimage.color import rgb2lab
 
 from src.lab_bin_converter import find_bin, bin_to_index
@@ -59,7 +59,7 @@ class BinnedImageGenerator(DirectoryIterator):
 
         batch_y = {
             "color_loss_3": distributions,
-            "color_regularizer": [],
+            "color_regularizer": empty((batch.shape[0], 0)),
             "lab_coherent": batch_lab
         }
         # TODO make sure lab in range -128,128

@@ -17,4 +17,4 @@ def gradient_loss(yTrue, yPred):
     """
     Sums up the difference in the size of gradients of the ab channels between both inputs
     """
-    return k.sum(k.abs(get_gradients(yTrue) - get_gradients(yPred)))
+    return tf.reduce_mean(tf.abs(get_gradients(yTrue) - get_gradients(yPred)))

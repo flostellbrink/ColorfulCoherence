@@ -1,7 +1,8 @@
-import keras.backend as k
 import tensorflow as tf
 from keras.engine import Layer
 from tensorflow import Tensor
+
+from src.util.util import softmax_temperature
 
 
 class DistToLab(Layer):
@@ -20,11 +21,17 @@ class DistToLab(Layer):
 
     def call(self, x, mask=None):
         [grayscale, color_classes] = x
-        color_classes_flat = k.reshape(color_classes, (-1, k.shape(color_classes)[-1]))
-        color_indices = k.argmax(color_classes_flat, -1)
-        ab_colors = tf.gather(self.color_map, color_indices)
-        # TODO replace hardcoded shape
+
+        # Flatten classes into 2D array
+        color_classes_flat = tf.reshape(color_classes, (-1, tf.shape(color_classes)[-1]))
+        # Apply softmax with low temperature to create approximate one hot encoding
+        color_classes_flat = softmax_temperature(color_classes_flat, 0.1)
+
+        # Use matrix multiplication to lookup indices in encoding in color map
+        ab_colors = tf.matmul(color_classes_flat, self.color_map)
+        # Reshape ab colors into 2D image plus channels
         ab_colors = tf.reshape(ab_colors, (-1, 256, 256, 2))
+        # Append grayscale channel
         lab_colors = tf.concat([grayscale, ab_colors], axis=-1)
 
         return lab_colors

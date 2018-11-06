@@ -4,6 +4,7 @@ from keras.backend import stop_gradient
 from keras.engine import Layer
 from keras.layers import Conv2D, BatchNormalization, Conv2DTranspose, Reshape, Activation, Lambda, UpSampling2D, \
     Concatenate
+import tensorflow as tf
 from tensorflow import convert_to_tensor, float32
 
 from src.binned_image_generator import BinnedImageGenerator
@@ -12,6 +13,7 @@ from src.dist_to_lab import DistToLab
 from src.gradient_loss import gradient_loss
 from src.lab_bin_converter import index_to_lab
 from src.util.config import Config
+from src.util.print_layer import PrintLayer
 from src.util.util import Util, zero_loss
 
 
@@ -63,13 +65,9 @@ def create_coherence_model(grayscale_input: Layer, color_output: Layer)-> Layer:
     conv1_3norm = BatchNormalization(name="coh_conv1_2norm")(conv1_3)
 
     # Set gradients to zero to prevent backpropagation into color model
-    stop_color_gradient = Lambda(lambda x: stop_gradient(x), name="stop_color_gradient")(color_output)
-    up_sample1_1 = UpSampling2D(2, name="up_sample1_1")(stop_color_gradient)
-    up_sample1_2 = UpSampling2D(2, name="up_sample1_2")(up_sample1_1)
-    up_sample1_2norm = BatchNormalization(name="up_sample1_2norm")(up_sample1_2)
-
-    concat = Concatenate(name="concat")([conv1_3norm, up_sample1_2norm])
-    conv2_1 = Conv2D(313, 3, name="coh_conv2_1")(concat)
+    color_output = Lambda(lambda x: stop_gradient(x), name="stop_color_gradient")(color_output)
+    concat = Concatenate(name="concat")([conv1_3norm, color_output])
+    conv2_1 = Conv2D(313, 3, name="coh_conv2_1", padding="same")(concat)
 
     return conv2_1
 
@@ -77,7 +75,9 @@ def create_coherence_model(grayscale_input: Layer, color_output: Layer)-> Layer:
 def create_model()-> Model:
     grayscale_input = Input(shape=(256, 256, 1))
     dist_colorful = create_color_model(grayscale_input)
-    dist_coherent = create_coherence_model(grayscale_input, dist_colorful)
+    # TODO interpolation?
+    up_sample_colorful = UpSampling2D((4, 4), name="up_sample_colorful")(dist_colorful)
+    dist_coherent = create_coherence_model(grayscale_input, up_sample_colorful)
 
     # For color cross entropy: Convert last color layer to 2D and activate with softmax
     color_loss_1 = Reshape((64 * 64, 313), name="color_loss_1")(dist_colorful)
@@ -85,11 +85,11 @@ def create_model()-> Model:
     color_loss_3 = Reshape((64, 64, 313), name="color_loss_3")(color_loss_2)
 
     # Regularizer to keep colors when optimizing coherence
-    color_regularizer = ColorRegularizer(name="color_regularizer")([dist_colorful, dist_coherent])
+    color_regularizer = ColorRegularizer(name="color_regularizer")([up_sample_colorful, dist_coherent])
 
     # Create lab space images (for comparison and gradient loss)
     color_map = convert_to_tensor(index_to_lab, dtype=float32)
-    lab_colorful = DistToLab(color_map, name="lab_colorful")([grayscale_input, dist_colorful])
+    lab_colorful = DistToLab(color_map, name="lab_colorful")([grayscale_input, up_sample_colorful])
     lab_coherent = DistToLab(color_map, name="lab_coherent")([grayscale_input, dist_coherent])
 
     model = Model(grayscale_input, [color_loss_3, color_regularizer, lab_coherent])
