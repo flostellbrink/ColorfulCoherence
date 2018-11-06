@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Union
 
+import tensorflow as tf
 from keras import Model
 from keras.backend import zeros_like
 from keras.callbacks import TensorBoard, ModelCheckpoint
@@ -48,3 +49,14 @@ def latest_checkpoint(network: str) -> Union[Path, None]:
 
 def zero_loss(y_true, y_pred):
     return zeros_like(y_pred)
+
+
+def softmax_temperature(logits, temperature):
+    """
+    Runs softmax with temperature on logits
+    :param logits: Input distribution
+    :param temperature: Temperature. 1 means softmax, towards 0 behaves like one hot
+    :return: Softmaxed distribution
+    """
+    log_by_temp = tf.log(logits) / temperature
+    return tf.exp(log_by_temp) / tf.reduce_sum(tf.exp(log_by_temp))
