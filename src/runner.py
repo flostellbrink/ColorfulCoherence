@@ -1,6 +1,9 @@
+# Load config to ensure gpu usage is configured
+import src.util.config
+
 from keras.engine.saving import load_model
 from keras_preprocessing.image import ImageDataGenerator
-from tensorflow.python.debug import TensorBoardDebugWrapperSession
+from tensorflow.python.debug import TensorBoardDebugWrapperSession, LocalCLIDebugWrapperSession
 
 from src.binned_image_generator import BinnedImageGenerator
 from src.model import train_model
@@ -11,13 +14,16 @@ import tensorflow as tf
 from keras import backend as k
 
 
-def train_and_test(resume_training=False, tf_debug=False):
+def train_and_test(resume_training=False, tensorboard_debug=False, cli_debug=False):
     """
     Train and test in default environment
     """
-    if tf_debug:
+    if tensorboard_debug:
         # Open tf debug session connected to tensor board, this only really works well on linux
         k.set_session(TensorBoardDebugWrapperSession(tf.Session(), '127.0.0.1:6064'))
+    elif cli_debug:
+        # Open tf debug session with local cli, run manually via ssh
+        k.set_session(LocalCLIDebugWrapperSession(tf.Session()))
 
     if resume_training:
         checkpoint_dir = latest_checkpoint("colorizer")

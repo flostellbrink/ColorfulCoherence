@@ -8,13 +8,14 @@ if __name__ == "__main__":
     # Setup environment to work on server
 
     # Limit gpu usage
-    environ['CUDA_VISIBLE_DEVICES'] = '2'
+    if Config.enable_gpu:
+        environ['CUDA_VISIBLE_DEVICES'] = '2'
 
     # Adjust paths
     Config.data_folder = Path("/scratch/lt2316-h18-resources/coco")
     Config.model_folder = Path("/scratch/gusstefl/model")
     Config.log_folder = Path("/scratch/gusstefl/logs")
-    Config.batch_size = 8
+    Config.batch_size = 1
 
     # Run default training
-    train_and_test(tf_debug=True)
+    train_and_test()

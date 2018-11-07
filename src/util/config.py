@@ -9,8 +9,9 @@ class Config:
     log_folder = root_folder.joinpath("logs")
     max_epochs = 100
     batch_size = 1
+    epsilon = 1e-10
+    enable_gpu = True
 
 
-enable_gpu = True
-if not enable_gpu:
+if not Config.enable_gpu:
     environ['CUDA_VISIBLE_DEVICES'] = '-1'
