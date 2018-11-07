@@ -51,6 +51,13 @@ def zero_loss(y_true, y_pred):
     return zeros_like(y_pred)
 
 
+def identity_loss(y_true, y_pred):
+    """
+    The prediction is a loss function, returns it.
+    """
+    return y_pred
+
+
 def softmax_temperature(logits, temperature):
     """
     Runs softmax with temperature on logits
@@ -58,5 +65,5 @@ def softmax_temperature(logits, temperature):
     :param temperature: Temperature. 1 means softmax, towards 0 behaves like one hot
     :return: Softmaxed distribution
     """
-    log_by_temp = tf.log(logits) / temperature
+    log_by_temp = tf.log(tf.sigmoid(logits) + Config.epsilon) / temperature
     return tf.exp(log_by_temp) / tf.reduce_sum(tf.exp(log_by_temp))

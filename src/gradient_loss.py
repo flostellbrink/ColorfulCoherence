@@ -12,7 +12,6 @@ def get_gradients(y):
     delta_x, delta_y = image_gradients(y)
     return tf.abs(delta_x) + tf.abs(delta_y)
 
-
 def gradient_loss(yTrue, yPred):
     """
     Sums up the difference in the size of gradients of the ab channels between both inputs

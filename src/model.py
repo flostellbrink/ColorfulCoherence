@@ -14,7 +14,7 @@ from src.gradient_loss import gradient_loss
 from src.lab_bin_converter import index_to_lab
 from src.util.config import Config
 from src.util.print_layer import PrintLayer
-from src.util.util import Util, zero_loss
+from src.util.util import Util, zero_loss, identity_loss
 
 
 def create_color_model(grayscale_input: Layer) -> Layer:
@@ -95,7 +95,7 @@ def create_model()-> Model:
     model = Model(grayscale_input, [color_loss_3, color_regularizer, lab_coherent])
     losses = {
         "color_loss_3": "categorical_crossentropy",
-        "color_regularizer": zero_loss,
+        "color_regularizer": identity_loss,
         "lab_coherent": gradient_loss
     }
     model.compile(optimizer="Adam", loss=losses)
