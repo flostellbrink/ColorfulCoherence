@@ -30,8 +30,10 @@ class ColorRegularizer(Layer):
         # This will only have a high output if the one hot selection is likely in the original.
         multiplied = tf.multiply(original, boosted)
 
-        # When we have a complete match the sum is 1, to turn this into loss we invert it
-        loss = tf.reduce_mean(1 - tf.reduce_sum(multiplied, axis=-1))
+        # When we have a complete match each sum is 1, we invert this to get a minimizable loss
+        # Initially I intended to subtract it from 1 so the loss would be in [0,1]. but that causes precision issues.
+        # Instead it is now in [0,-1] where -1 is optimal.
+        loss = tf.reduce_mean(-tf.reduce_sum(multiplied, axis=-1))
 
         return loss
 
