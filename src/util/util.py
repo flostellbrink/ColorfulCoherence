@@ -20,6 +20,7 @@ class Util:
         """
         folder = Config.log_folder.joinpath(self.network).joinpath(str(self.latest_folder + 1))
         folder.mkdir(parents=True, exist_ok=True)
+        print(f"Tensor board folder: {str(folder)}")
         return TensorBoard(log_dir=str(folder))
 
     def model_checkpoint(self) -> ModelCheckpoint:
@@ -30,12 +31,14 @@ class Util:
         folder = Config.model_folder.joinpath(self.network).joinpath(str(self.latest_folder + 1))
         folder.mkdir(parents=True, exist_ok=True)
         file = folder.joinpath("checkpoint-{epoch:02d}-l:{loss:.2f}-vl:{val_loss:.2f}.h5")
-        return ModelCheckpoint(str(file), period=1  )
+        print(f"Checkpoint file: {str(file)}")
+        return ModelCheckpoint(str(file))
 
     def save_model(self, model: Model):
         folder = Config.model_folder.joinpath(self.network).joinpath(str(self.latest_folder + 1))
         folder.mkdir(parents=True, exist_ok=True)
         file = folder.joinpath("model.h5")
+        print(f"Model file: {str(file)}")
         model.save(str(file))
 
 
