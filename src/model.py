@@ -12,6 +12,7 @@ from src.color_regularizer import ColorRegularizer
 from src.dist_to_lab import DistToLab
 from src.gradient_loss import gradient_loss
 from src.lab_bin_converter import index_to_lab
+from src.loss_weights_strategy import LossWeightsStrategy
 from src.util.config import Config
 from src.util.print_layer import PrintLayer
 from src.util.util import Util, zero_loss, identity_loss
@@ -72,7 +73,7 @@ def create_coherence_model(grayscale_input: Layer, color_output: Layer)-> Layer:
     return conv2_1
 
 
-def create_model()-> Model:
+def create_model(loss_weights_strategy: LossWeightsStrategy) -> Model:
     grayscale_input = Input(shape=(256, 256, 1))
     dist_colorful = create_color_model(grayscale_input)
     # TODO interpolation?
@@ -98,15 +99,16 @@ def create_model()-> Model:
         "color_regularizer": identity_loss,
         "lab_coherent": gradient_loss
     }
-    model.compile(optimizer="Adam", loss=losses)
+    model.compile(optimizer="Adam", loss=losses, loss_weights=loss_weights_strategy.get_weights())
     print(model.summary())
     return model
 
 
 def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedImageGenerator, model: Model=None):
+    loss_weights_strategy = LossWeightsStrategy()
     if model is None:
         print("Creating fresh model...")
-        model = create_model()
+        model = create_model(loss_weights_strategy)
 
     util = Util("colorizer")
     model.fit_generator(
@@ -117,7 +119,8 @@ def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedIma
         validation_steps=len(test_generator),
         callbacks=[
             util.tensor_board(),
-            util.model_checkpoint()
+            util.model_checkpoint(),
+            loss_weights_strategy
         ]
     )
 
