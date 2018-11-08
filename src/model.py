@@ -4,7 +4,6 @@ from keras.backend import stop_gradient
 from keras.engine import Layer
 from keras.layers import Conv2D, BatchNormalization, Conv2DTranspose, Reshape, Activation, Lambda, UpSampling2D, \
     Concatenate
-import tensorflow as tf
 from tensorflow import convert_to_tensor, float32
 
 from src.binned_image_generator import BinnedImageGenerator
@@ -12,10 +11,8 @@ from src.color_regularizer import ColorRegularizer
 from src.dist_to_lab import DistToLab
 from src.gradient_loss import gradient_loss
 from src.lab_bin_converter import index_to_lab
-from src.loss_weights_strategy import LossWeightsStrategy
 from src.util.config import Config
-from src.util.print_layer import PrintLayer
-from src.util.util import Util, zero_loss, identity_loss
+from src.util.util import Util, identity_loss
 
 
 def create_color_model(grayscale_input: Layer) -> Layer:
@@ -73,7 +70,7 @@ def create_coherence_model(grayscale_input: Layer, color_output: Layer)-> Layer:
     return conv2_1
 
 
-def create_model(loss_weights_strategy: LossWeightsStrategy) -> Model:
+def create_model() -> Model:
     grayscale_input = Input(shape=(256, 256, 1))
     dist_colorful = create_color_model(grayscale_input)
     # TODO interpolation?
@@ -99,16 +96,16 @@ def create_model(loss_weights_strategy: LossWeightsStrategy) -> Model:
         "color_regularizer": identity_loss,
         "lab_coherent": gradient_loss
     }
-    model.compile(optimizer="Adam", loss=losses, loss_weights=loss_weights_strategy.get_weights())
+    # Compile model, prioritize regularizer loss
+    model.compile(optimizer="Adam", loss=losses, loss_weights=[1.0, 10.0, 1.0])
     print(model.summary())
     return model
 
 
 def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedImageGenerator, model: Model=None):
-    loss_weights_strategy = LossWeightsStrategy()
     if model is None:
         print("Creating fresh model...")
-        model = create_model(loss_weights_strategy)
+        model = create_model()
 
     util = Util("colorizer")
     model.fit_generator(
@@ -119,8 +116,7 @@ def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedIma
         validation_steps=len(test_generator),
         callbacks=[
             util.tensor_board(),
-            util.model_checkpoint(),
-            loss_weights_strategy
+            util.model_checkpoint()
         ]
     )
 

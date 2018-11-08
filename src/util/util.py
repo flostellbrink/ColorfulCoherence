@@ -61,12 +61,20 @@ def identity_loss(y_true, y_pred):
     return y_pred
 
 
-def softmax_temperature(logits, temperature):
+def softmax(logits):
     """
-    Runs softmax with temperature on logits
+    Softmax function in last dimension of input.
+    """
+    exp_logits = tf.exp(logits)
+    return exp_logits / tf.reshape(tf.reduce_sum(exp_logits, axis=-1), (-1, 1))
+
+
+def softmax_temperature(logits, temperature = 0.01):
+    """
+    Runs softmax with temperature on logits, adds additional hacks to avoid undefinedness of log around 0.
     :param logits: Input distribution
     :param temperature: Temperature. 1 means softmax, towards 0 behaves like one hot
     :return: Softmaxed distribution
     """
-    log_by_temp = tf.log(tf.sigmoid(logits) + Config.epsilon) / temperature
-    return tf.exp(log_by_temp) / tf.reduce_sum(tf.exp(log_by_temp))
+    exp_log_by_temp = tf.exp(tf.log(tf.sigmoid(logits) + Config.epsilon) / temperature)
+    return exp_log_by_temp / tf.reshape(tf.reduce_sum(exp_log_by_temp, axis=-1), (-1, 1))

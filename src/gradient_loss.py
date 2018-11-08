@@ -1,4 +1,3 @@
-import keras.backend as k
 import tensorflow as tf
 from tensorflow.python.ops.image_ops_impl import image_gradients
 
@@ -11,6 +10,7 @@ def get_gradients(y):
     y = y[:, :, :, 1:]
     delta_x, delta_y = image_gradients(y)
     return tf.abs(delta_x) + tf.abs(delta_y)
+
 
 def gradient_loss(yTrue, yPred):
     """

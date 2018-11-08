@@ -25,7 +25,7 @@ class DistToLab(Layer):
         # Flatten classes into 2D array
         color_classes_flat = tf.reshape(color_classes, (-1, tf.shape(color_classes)[-1]))
         # Apply softmax with low temperature to create approximate one hot encoding
-        color_classes_flat = softmax_temperature(color_classes_flat, 0.1)
+        color_classes_flat = softmax_temperature(color_classes_flat)
 
         # Use matrix multiplication to lookup indices in encoding in color map
         ab_colors = tf.matmul(color_classes_flat, self.color_map)
