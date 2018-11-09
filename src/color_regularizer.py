@@ -1,7 +1,7 @@
 import tensorflow as tf
 from keras.engine import Layer
 
-from src.util.util import softmax_temperature, softmax
+from src.util.util import softmax_temperature, softmax, not_zero
 
 
 class ColorRegularizer(Layer):
@@ -29,9 +29,14 @@ class ColorRegularizer(Layer):
         # This will only have a high output if the one hot selection is likely in the original.
         multiplied = tf.multiply(original, boosted)
 
+        loss = tf.reduce_sum(multiplied, axis=-1)
+        # Correct loss for the assumption that the original is one hot encoded.
+        # TODO This seems to encourage small original values and ultimately 0s
+        # TODO That would mean, this loss bleads back into the colorful part, which should definetely be stopped by stop gradients!
+        # loss /= tf.reduce_max(original, axis=-1)
+
         # When we have a complete match each sum is 1, we invert this to get a minimizable loss.
-        # Correct this value for the assumption that the original is one hot encoded.
-        loss = tf.reduce_mean(1.0 - tf.reduce_sum(multiplied, axis=-1) / tf.reduce_max(original, axis=-1))
+        loss = tf.reduce_mean(1.0 - loss)
 
         return loss
 

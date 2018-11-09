@@ -61,12 +61,20 @@ def identity_loss(y_true, y_pred):
     return y_pred
 
 
+def not_zero(x):
+    """
+    Returns relu, whith small epsilon instead of zero.
+    Used to avoid nans in divisions and logs.
+    """
+    return tf.maximum(x, Config.epsilon)
+
+
 def softmax(logits):
     """
     Softmax function in last dimension of input.
     """
     exp_logits = tf.exp(logits)
-    return exp_logits / tf.reshape(tf.reduce_sum(exp_logits, axis=-1), (-1, 1))
+    return exp_logits / not_zero(tf.reshape(tf.reduce_sum(exp_logits, axis=-1), (-1, 1)))
 
 
 def softmax_temperature(logits, temperature = 0.01):
@@ -77,4 +85,4 @@ def softmax_temperature(logits, temperature = 0.01):
     :return: Softmaxed distribution
     """
     exp_log_by_temp = tf.exp(tf.log(tf.sigmoid(logits) + Config.epsilon) / temperature)
-    return exp_log_by_temp / tf.reshape(tf.reduce_sum(exp_log_by_temp, axis=-1), (-1, 1))
+    return exp_log_by_temp / not_zero(tf.reshape(tf.reduce_sum(exp_log_by_temp, axis=-1), (-1, 1)))

@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from src.binned_image_generator import BinnedImageGenerator
 from src.util.config import Config
-from src.util.util import softmax
+from src.util.util import softmax, not_zero
 
 
 class ColorfulLoss:
@@ -30,7 +30,7 @@ class ColorfulLoss:
             yPred = softmax(yPred)
 
             # Find cross entropy across last dimension
-            cross_entropy = -tf.reduce_sum((yTrue * tf.log(tf.abs(yPred) + Config.epsilon)), axis=-1)
+            cross_entropy = -tf.reduce_sum((yTrue * tf.log(not_zero(yPred))), axis=-1)
 
             # Find weighing term by combining empirical and normal distribution using mix
             weight = (1-mix) * tf.reduce_sum(yTrue * self.distribution, axis=-1) + mix / 313
