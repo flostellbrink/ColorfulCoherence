@@ -64,7 +64,6 @@ def create_coherence_model(grayscale_input: Layer, color_output: Layer)-> Layer:
     conv1_3norm = BatchNormalization(name="coh_conv1_2norm")(conv1_3)
 
     # Set gradients to zero to prevent backpropagation into color model
-    color_output = Lambda(lambda x: stop_gradient(x), name="stop_color_gradient")(color_output)
     concat = Concatenate(name="concat")([conv1_3norm, color_output])
     conv2_1 = Conv2D(313, 3, name="coh_conv2_1", padding="same")(concat)
 
@@ -74,8 +73,9 @@ def create_coherence_model(grayscale_input: Layer, color_output: Layer)-> Layer:
 def create_model(colorful_loss: ColorfulLoss) -> Model:
     grayscale_input = Input(shape=(256, 256, 1))
     dist_colorful = create_color_model(grayscale_input)
+    stop_color_gradient = Lambda(lambda x: stop_gradient(x), name="stop_color_gradient")(dist_colorful)
     # TODO interpolation?
-    up_sample_colorful = UpSampling2D((4, 4), name="up_sample_colorful")(dist_colorful)
+    up_sample_colorful = UpSampling2D((4, 4), name="up_sample_colorful")(stop_color_gradient)
     dist_coherent = create_coherence_model(grayscale_input, up_sample_colorful)
 
     # Regularizer to keep colors when optimizing coherence
