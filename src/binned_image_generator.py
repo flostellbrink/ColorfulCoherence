@@ -1,5 +1,5 @@
 from keras_preprocessing.image import DirectoryIterator
-from numpy import array, zeros, empty, float32
+from numpy import array, zeros, empty, float32, isnan
 from skimage.color import rgb2lab
 
 from src.lab_bin_converter import find_bin, bin_to_index
@@ -51,9 +51,13 @@ class BinnedImageGenerator(DirectoryIterator):
 
         return bins
 
-
     def _get_batches_of_transformed_samples(self, index_array):
         batch = super(BinnedImageGenerator, self)._get_batches_of_transformed_samples(index_array)
+
+        for image in batch:
+            shape = image.shape
+            if shape[0] != 256 or shape[1] != 256 or shape[2] != 3 or len(shape) != 3 or isnan(image).any():
+                raise Exception('Invalid image in batch')
 
         # Convert batch to lab color space
         batch *= 1.0 / 256.0
