@@ -1,7 +1,6 @@
 import tensorflow as tf
 
 from src.binned_image_generator import BinnedImageGenerator
-from src.util.config import Config
 from src.util.util import softmax, not_zero
 
 
@@ -10,9 +9,10 @@ class ColorfulLoss:
         """
         Find empirical color distribution in dataset
         """
-        print("Finding empirical color distribution")
+        print("Finding empirical color distribution...")
         self.distribution = generator.get_bin_counts()
         self.distribution /= max(self.distribution)
+        self.distribution = 1.0 - self.distribution
         self.distribution = tf.convert_to_tensor(self.distribution)
 
     def get_loss(self, mix=0.5):
