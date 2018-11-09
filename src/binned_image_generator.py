@@ -1,5 +1,5 @@
 from keras_preprocessing.image import DirectoryIterator
-from numpy import array, zeros, empty
+from numpy import array, zeros, empty, float32
 from skimage.color import rgb2lab
 
 from src.lab_bin_converter import find_bin, bin_to_index
@@ -29,6 +29,29 @@ class BinnedImageGenerator(DirectoryIterator):
                                                    interpolation,
                                                    dtype)
 
+    def get_bin_counts(self):
+        bins = zeros((313,), dtype=float32)
+
+        # TODO full set (len(self)) takes a long time, find a way around this hack
+        for i in range(100):
+            index_array = next(self.index_generator)
+            batch = super(BinnedImageGenerator, self)._get_batches_of_transformed_samples(index_array)
+
+            # Convert batch to lab color space
+            batch *= 1.0 / 256.0
+            batch_lab = array(list(map(lambda image: rgb2lab(image), batch)))
+
+            # Find bins
+            batch_bins = find_bin(batch_lab[:, :, :, 1], batch_lab[:, :, :, 2])
+            batch_categories = bin_to_index[batch_bins]
+
+            # Increment counters for each bin
+            for category in batch_categories:
+                bins[category] += 1
+
+        return bins
+
+
     def _get_batches_of_transformed_samples(self, index_array):
         batch = super(BinnedImageGenerator, self)._get_batches_of_transformed_samples(index_array)
 
@@ -43,8 +66,6 @@ class BinnedImageGenerator(DirectoryIterator):
         # Discretize other dimensions
         batch_y_bins = find_bin(batch_lab[:, :, :, 1], batch_lab[:, :, :, 2])
         batch_y_categories = bin_to_index[batch_y_bins]
-        oob_mask_cats = batch_y_categories == -1
-        oob_batch = batch[oob_mask_cats]
 
         # Resample image and generate softmax style encoding
         distributions = zeros((batch.shape[0], 64, 64, 313))
@@ -58,7 +79,7 @@ class BinnedImageGenerator(DirectoryIterator):
                             distributions[batch_i, x, y, category] += 1.0 / 16.0
 
         batch_y = {
-            "color_loss_3": distributions,
+            "dist_colorful": distributions,
             "color_regularizer": empty((batch.shape[0], 0)),
             "lab_coherent": batch_lab
         }

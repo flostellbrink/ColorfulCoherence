@@ -8,6 +8,7 @@ from tensorflow import convert_to_tensor, float32
 
 from src.binned_image_generator import BinnedImageGenerator
 from src.color_regularizer import ColorRegularizer
+from src.colorful_loss import ColorfulLoss
 from src.dist_to_lab import DistToLab
 from src.gradient_loss import gradient_loss
 from src.lab_bin_converter import index_to_lab
@@ -51,7 +52,7 @@ def create_color_model(grayscale_input: Layer) -> Layer:
     conv8_2 = Conv2D(256, 3, name="conv8_2", padding="same", activation=relu)(conv8_1)
     conv8_3 = Conv2D(256, 3, name="conv8_3", padding="same", activation=relu)(conv8_2)
     conv8_3norm = BatchNormalization(name="conv8_3norm")(conv8_3)
-    conv8_313 = Conv2D(313, 1, name="conv8_313")(conv8_3norm)
+    conv8_313 = Conv2D(313, 1, name="dist_colorful")(conv8_3norm)
 
     return conv8_313
 
@@ -70,17 +71,12 @@ def create_coherence_model(grayscale_input: Layer, color_output: Layer)-> Layer:
     return conv2_1
 
 
-def create_model() -> Model:
+def create_model(colorful_loss: ColorfulLoss) -> Model:
     grayscale_input = Input(shape=(256, 256, 1))
     dist_colorful = create_color_model(grayscale_input)
     # TODO interpolation?
     up_sample_colorful = UpSampling2D((4, 4), name="up_sample_colorful")(dist_colorful)
     dist_coherent = create_coherence_model(grayscale_input, up_sample_colorful)
-
-    # For color cross entropy: Convert last color layer to 2D and activate with softmax
-    color_loss_1 = Reshape((64 * 64, 313), name="color_loss_1")(dist_colorful)
-    color_loss_2 = Activation(softmax, name="color_loss_2")(color_loss_1)
-    color_loss_3 = Reshape((64, 64, 313), name="color_loss_3")(color_loss_2)
 
     # Regularizer to keep colors when optimizing coherence
     color_regularizer = ColorRegularizer(name="color_regularizer")([up_sample_colorful, dist_coherent])
@@ -90,9 +86,9 @@ def create_model() -> Model:
     lab_colorful = DistToLab(color_map, name="lab_colorful")([grayscale_input, up_sample_colorful])
     lab_coherent = DistToLab(color_map, name="lab_coherent")([grayscale_input, dist_coherent])
 
-    model = Model(grayscale_input, [color_loss_3, color_regularizer, lab_coherent])
+    model = Model(grayscale_input, [dist_colorful, color_regularizer, lab_coherent])
     losses = {
-        "color_loss_3": "categorical_crossentropy",
+        "dist_colorful": colorful_loss.get_loss(),
         "color_regularizer": identity_loss,
         "lab_coherent": gradient_loss
     }
@@ -103,9 +99,11 @@ def create_model() -> Model:
 
 
 def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedImageGenerator, model: Model=None):
+    colorful_loss = ColorfulLoss(train_generator)
+
     if model is None:
         print("Creating fresh model...")
-        model = create_model()
+        model = create_model(colorful_loss)
 
     util = Util("colorizer")
     model.fit_generator(
