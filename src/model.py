@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from keras import Input, Model
 from keras.activations import relu, softmax
 from keras.backend import stop_gradient
@@ -73,8 +75,8 @@ def create_coherence_model(grayscale_input: Layer, color_output: Layer)-> Layer:
     return conv2_1
 
 
-def create_model(colorful_loss: ColorfulLoss) -> Model:
-    grayscale_input = Input(shape=(256, 256, 1))
+def create_model(colorful_loss: ColorfulLoss) -> Tuple[Model, Layer, Layer]:
+    grayscale_input = Input(shape=(256, 256, 1), name="input_1")
     dist_colorful = create_color_model(grayscale_input)
     stop_color_gradient = Lambda(lambda x: stop_gradient(x), name="stop_color_gradient")(dist_colorful)
     # TODO interpolation?
@@ -98,7 +100,7 @@ def create_model(colorful_loss: ColorfulLoss) -> Model:
     # Compile model, prioritize regularizer loss
     model.compile(optimizer="Adam", loss=losses, loss_weights=[1.0, 10.0, 1.0])
     print(model.summary())
-    return model
+    return model, lab_colorful, lab_coherent
 
 
 def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedImageGenerator, model: Model=None):
@@ -106,7 +108,7 @@ def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedIma
 
     if model is None:
         print("Creating fresh model...")
-        model = create_model(colorful_loss)
+        model, _, _ = create_model(colorful_loss)
 
     util = Util("colorizer")
     model.fit_generator(
