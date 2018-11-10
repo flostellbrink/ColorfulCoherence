@@ -1,9 +1,8 @@
 from keras_preprocessing.image import DirectoryIterator
 from numpy import array, zeros, empty, float32, isnan
-from skimage.color import rgb2lab
 
 from src.lab_bin_converter import find_bin, bin_to_index
-from src.util.config import Config
+from src.util.util import full_rgb2lab
 
 
 class BinnedImageGenerator(DirectoryIterator):
@@ -39,8 +38,7 @@ class BinnedImageGenerator(DirectoryIterator):
             batch = super(BinnedImageGenerator, self)._get_batches_of_transformed_samples(index_array)
 
             # Convert batch to lab color space
-            batch *= 1.0 / 256.0
-            batch_lab = array(list(map(lambda image: rgb2lab(image), batch)))
+            batch_lab = array(list(map(lambda image: full_rgb2lab(image), batch)))
 
             # Find bins
             batch_bins = find_bin(batch_lab[:, :, :, 1], batch_lab[:, :, :, 2])
@@ -61,12 +59,10 @@ class BinnedImageGenerator(DirectoryIterator):
                 raise Exception('Invalid image in batch')
 
         # Convert batch to lab color space
-        batch *= 1.0 / 256.0
-        batch_lab = array(list(map(lambda image: rgb2lab(image), batch)))
+        batch_lab = array(list(map(lambda image: full_rgb2lab(image), batch)))
 
         # Pull luminance as source
         batch_x = batch_lab[:, :, :, 0:1]
-        batch_x *= 1.0 / 100.0
 
         # Discretize other dimensions
         batch_y_bins = find_bin(batch_lab[:, :, :, 1], batch_lab[:, :, :, 2])
@@ -88,7 +84,7 @@ class BinnedImageGenerator(DirectoryIterator):
             "color_regularizer": empty((batch.shape[0], 0)),
             "lab_coherent": batch_lab
         }
-        # TODO make sure lab in range -128,128
+
         return batch_x, batch_y
 
     def next(self):

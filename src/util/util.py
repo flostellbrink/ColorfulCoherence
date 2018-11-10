@@ -5,6 +5,8 @@ import tensorflow as tf
 from keras import Model
 from keras.backend import zeros_like
 from keras.callbacks import TensorBoard, ModelCheckpoint
+from skimage.color import rgb2lab, lab2rgb
+
 from src.util.config import Config
 
 
@@ -86,3 +88,11 @@ def softmax_temperature(logits, temperature = 0.01):
     """
     exp_log_by_temp = tf.exp(tf.log(tf.sigmoid(logits) + Config.epsilon) / temperature)
     return exp_log_by_temp / not_zero(tf.reshape(tf.reduce_sum(exp_log_by_temp, axis=-1), (-1, 1)))
+
+
+def full_rgb2lab(rgb):
+    """
+    The inner function converts from [0,1] to proper lab.
+    This convert from [0,255] to proper lab.
+    """
+    return rgb2lab(rgb / 255.0)
