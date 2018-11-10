@@ -3,6 +3,7 @@ from numpy import array, zeros, empty, float32, isnan
 from skimage.color import rgb2lab
 
 from src.lab_bin_converter import find_bin, bin_to_index
+from src.util.config import Config
 
 
 class BinnedImageGenerator(DirectoryIterator):
@@ -33,7 +34,7 @@ class BinnedImageGenerator(DirectoryIterator):
         bins = zeros((313,), dtype=float32)
 
         # TODO full set (len(self)) takes a long time, find a way around this hack
-        for i in range(100):
+        for i in range(500 // self.batch_size):
             index_array = next(self.index_generator)
             batch = super(BinnedImageGenerator, self)._get_batches_of_transformed_samples(index_array)
 
