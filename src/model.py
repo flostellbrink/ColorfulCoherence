@@ -17,6 +17,9 @@ from src.util.util import Util, identity_loss
 
 
 def create_color_model(grayscale_input: Layer) -> Layer:
+    """
+    This is a replication of the colorful colorization model.
+    """
     conv1_1 = Conv2D(64, 3, name="conv1_1", padding="same", activation=relu)(grayscale_input)
     conv1_2 = Conv2D(64, 3, name="conv1_2", padding="same", strides=2, activation=relu)(conv1_1)
     conv1_2norm = BatchNormalization(name="conv1_2norm")(conv1_2)
