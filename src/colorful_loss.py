@@ -1,21 +1,31 @@
 import tensorflow as tf
+from tensorflow import zeros
 
 from src.binned_image_generator import BinnedImageGenerator
+from src.util.config import Config
 from src.util.util import softmax, not_zero
 
 
 class ColorfulLoss:
-    def __init__(self, generator: BinnedImageGenerator):
+    def __init__(self, generator: BinnedImageGenerator, mix=0.5):
         """
         Find empirical color distribution in dataset
         """
+        if Config.validation:
+            print("Skipping empirical distribution in validation run")
+            self.distribution = zeros((313,))
+            return
+
         print("Finding empirical color distribution...")
         self.distribution = generator.get_bin_counts()
         self.distribution /= max(self.distribution)
-        self.distribution = 1.0 - self.distribution
+
+        # Combine with uniform and invert
+        self.distribution = (1-mix) * self.distribution + mix / 313
+        self.distribution = 1.0 / self.distribution
         self.distribution = tf.convert_to_tensor(self.distribution)
 
-    def get_loss(self, mix=0.5):
+    def get_loss(self):
         """
         Returns cross entropy between two distributions, balances classes using the saved distribution.
         :param mix: How much of a uniform distribution to use when mixing it with the empirical distribution
@@ -33,7 +43,7 @@ class ColorfulLoss:
             cross_entropy = -tf.reduce_sum((yTrue * tf.log(not_zero(yPred))), axis=-1)
 
             # Find weighing term by combining empirical and normal distribution using mix
-            weight = (1-mix) * tf.reduce_sum(yTrue * self.distribution, axis=-1) + mix / 313
+            weight = tf.reduce_sum(yTrue * self.distribution, axis=-1)
 
             return tf.reduce_mean(weight * cross_entropy)
 

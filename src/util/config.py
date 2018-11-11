@@ -10,6 +10,7 @@ class Config:
     max_epochs = 100
     batch_size = 1
     epsilon = 1e-10
+    validation = False
     enable_gpu = True
 
 

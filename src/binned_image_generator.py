@@ -32,8 +32,10 @@ class BinnedImageGenerator(DirectoryIterator):
     def get_bin_counts(self):
         bins = zeros((313,), dtype=float32)
 
-        # TODO full set (len(self)) takes a long time, find a way around this hack
-        for i in range(500 // self.batch_size):
+        for i in range(len(self)):
+            if i % 100 == 0:
+                print(f"Processing {len(self)} images: {i/len(self)}%", end='\r')
+
             index_array = next(self.index_generator)
             batch = super(BinnedImageGenerator, self)._get_batches_of_transformed_samples(index_array)
 

@@ -27,7 +27,7 @@ class DistToLab(Layer):
         # Apply softmax with low temperature to create approximate one hot encoding
         color_classes_flat = softmax_temperature(color_classes_flat)
 
-        # Use matrix multiplication to lookup indices in encoding in color map
+        # Use matrix multiplication to lookup color and sum for each probability
         ab_colors = tf.matmul(color_classes_flat, self.color_map)
         # Reshape ab colors into 2D image plus channels
         ab_colors = tf.reshape(ab_colors, (-1, 256, 256, 2))

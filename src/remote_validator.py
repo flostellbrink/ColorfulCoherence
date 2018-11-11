@@ -18,4 +18,4 @@ if __name__ == "__main__":
     Config.batch_size = 6
 
     # Run default training
-    validate("model/checkpoint-01-l_11.61-vl_12.98.h5")
+    validate("model/model.h5")
