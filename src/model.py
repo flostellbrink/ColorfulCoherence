@@ -88,7 +88,7 @@ def create_model(colorful_loss: ColorfulLoss) -> Tuple[Model, Layer, Layer]:
 
     # Create lab space images (for comparison and gradient loss)
     color_map = convert_to_tensor(index_to_lab, dtype=float32)
-    lab_colorful = DistToLab(color_map, name="lab_colorful")([grayscale_input, up_sample_colorful])
+    lab_colorful = DistToLab(color_map, temperature=0.38, name="lab_colorful")([grayscale_input, up_sample_colorful])
     lab_coherent = DistToLab(color_map, name="lab_coherent")([grayscale_input, dist_coherent])
 
     model = Model(grayscale_input, [dist_colorful, color_regularizer, lab_coherent])

@@ -10,7 +10,7 @@ class DistToLab(Layer):
     Layer to convert color distribution into lab color space
     """
 
-    def __init__(self, color_map: Tensor, **kwargs):
+    def __init__(self, color_map: Tensor, temperature=0.01, **kwargs):
         """
         Create layer to convert distribution into lab color space
         :param shape: Shape of grayscale input
@@ -18,6 +18,7 @@ class DistToLab(Layer):
         """
         super(DistToLab, self).__init__(**kwargs)
         self.color_map = color_map
+        self.temperature = temperature
 
     def call(self, x, mask=None):
         [grayscale, color_classes] = x
@@ -25,7 +26,7 @@ class DistToLab(Layer):
         # Flatten classes into 2D array
         color_classes_flat = tf.reshape(color_classes, (-1, tf.shape(color_classes)[-1]))
         # Apply softmax with low temperature to create approximate one hot encoding
-        color_classes_flat = softmax_temperature(color_classes_flat)
+        color_classes_flat = softmax_temperature(color_classes_flat, self.temperature)
 
         # Use matrix multiplication to lookup color and sum for each probability
         ab_colors = tf.matmul(color_classes_flat, self.color_map)
