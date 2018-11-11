@@ -1,5 +1,7 @@
+from concurrent.futures import ThreadPoolExecutor
+
 from keras_preprocessing.image import DirectoryIterator
-from numpy import array, zeros, empty, float32, isnan
+from numpy import array, zeros, empty, float32, isnan, bincount, sum
 
 from src.lab_bin_converter import find_bin, bin_to_index
 from src.util.util import full_rgb2lab
@@ -30,27 +32,29 @@ class BinnedImageGenerator(DirectoryIterator):
                                                    dtype)
 
     def get_bin_counts(self):
-        bins = zeros((313,), dtype=float32)
+        def get_bins(i):
+            with self.lock:
+                print(f"Processing {len(self) * self.batch_size} images: {i / len(self) * 100.0:.3f}%", end='\r')
+                index_array = next(self.index_generator)
 
-        for i in range(len(self)):
-            if i % 100 == 0:
-                print(f"Processing {len(self)} images: {i/len(self)}%", end='\r')
-
-            index_array = next(self.index_generator)
             batch = super(BinnedImageGenerator, self)._get_batches_of_transformed_samples(index_array)
+            batch = batch.reshape((1, -1, 3))
 
             # Convert batch to lab color space
-            batch_lab = array(list(map(lambda image: full_rgb2lab(image), batch)))
+            batch_lab = full_rgb2lab(batch)
+            batch_lab = batch_lab.reshape(-1, 3)
 
             # Find bins
-            batch_bins = find_bin(batch_lab[:, :, :, 1], batch_lab[:, :, :, 2])
+            batch_bins = find_bin(batch_lab[:, 1], batch_lab[:, 2])
             batch_categories = bin_to_index[batch_bins]
 
             # Increment counters for each bin
-            for category in batch_categories:
-                bins[category] += 1
+            return bincount(batch_categories, minlength=313)
 
-        return bins
+        with ThreadPoolExecutor() as executor:
+            bins = executor.map(get_bins, range(len(self)))
+
+        return sum(array(list(bins)), axis=0)
 
     def _get_batches_of_transformed_samples(self, index_array):
         batch = super(BinnedImageGenerator, self)._get_batches_of_transformed_samples(index_array)
