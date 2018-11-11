@@ -98,7 +98,7 @@ def create_model(colorful_loss: ColorfulLoss) -> Tuple[Model, Layer, Layer]:
         "lab_coherent": gradient_loss
     }
     # Compile model, prioritize regularizer loss
-    model.compile(optimizer="Adam", loss=losses, loss_weights=[1.0, 10.0, 1.0])
+    model.compile(optimizer="Adam", loss=losses, loss_weights=[1.0, 1.0, 1.0])
     print(model.summary())
     return model, lab_colorful, lab_coherent
 
