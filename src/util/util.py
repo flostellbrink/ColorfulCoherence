@@ -75,7 +75,7 @@ def softmax(logits):
     """
     Softmax function in last dimension of input.
     """
-    exp_logits = tf.exp(logits)
+    exp_logits = tf.exp(tf.sigmoid(logits))
     return exp_logits / not_zero(tf.reshape(tf.reduce_sum(exp_logits, axis=-1), (-1, 1)))
 
 
