@@ -1,16 +1,17 @@
 from typing import Tuple
 
 from keras import Input, Model
-from keras.activations import relu, softmax
+from keras.activations import relu
 from keras.backend import stop_gradient
 from keras.engine import Layer
-from keras.layers import Conv2D, BatchNormalization, Conv2DTranspose, Reshape, Activation, Lambda, UpSampling2D, \
+from keras.layers import Conv2D, BatchNormalization, Conv2DTranspose, Lambda, UpSampling2D, \
     Concatenate
 from tensorflow import convert_to_tensor, float32
 
 from src.binned_image_generator import BinnedImageGenerator
 from src.color_regularizer import ColorRegularizer
 from src.colorful_loss import ColorfulLoss
+from src.dist_to_dist import DistToDist
 from src.dist_to_lab import DistToLab
 from src.gradient_loss import gradient_loss
 from src.lab_bin_converter import index_to_lab
@@ -75,7 +76,7 @@ def create_coherence_model(grayscale_input: Layer, color_output: Layer)-> Layer:
     return conv2_1
 
 
-def create_model(colorful_loss: ColorfulLoss) -> Tuple[Model, Layer, Layer]:
+def create_model(colorful_loss: ColorfulLoss) -> Tuple[Model, Layer, Layer, Layer, Layer]:
     grayscale_input = Input(shape=(256, 256, 1), name="input_1")
     dist_colorful = create_color_model(grayscale_input)
     stop_color_gradient = Lambda(lambda x: stop_gradient(x), name="stop_color_gradient")(dist_colorful)
@@ -100,7 +101,9 @@ def create_model(colorful_loss: ColorfulLoss) -> Tuple[Model, Layer, Layer]:
     # Compile model, prioritize regularizer loss
     model.compile(optimizer="Adam", loss=losses, loss_weights=[1.0, 1.0, 1.0])
     print(model.summary())
-    return model, lab_colorful, lab_coherent
+
+    dist_colorful_softmax = DistToDist(color_map, name="dist_colorful_softmax")([grayscale_input, up_sample_colorful])
+    return model, lab_colorful, dist_colorful_softmax, lab_coherent, dist_coherent
 
 
 def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedImageGenerator, model: Model=None):
@@ -108,7 +111,7 @@ def train_model(train_generator: BinnedImageGenerator, test_generator: BinnedIma
 
     if model is None:
         print("Creating fresh model...")
-        model, _, _ = create_model(colorful_loss)
+        model, _, _, _, _ = create_model(colorful_loss)
 
     util = Util("colorizer")
     model.fit_generator(
