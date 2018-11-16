@@ -1,9 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor
 
 from keras_preprocessing.image import DirectoryIterator
-from numpy import array, zeros, empty, float32, isnan, bincount, sum
+from numpy import array, zeros, empty, isnan, bincount, sum
 
-from src.lab_bin_converter import find_bin, bin_to_index
+from src.lab_bin_converter import find_bin, bin_to_index_map
 from src.util.util import full_rgb2lab
 
 
@@ -46,7 +46,7 @@ class BinnedImageGenerator(DirectoryIterator):
 
             # Find bins
             batch_bins = find_bin(batch_lab[:, 1], batch_lab[:, 2])
-            batch_categories = bin_to_index[batch_bins]
+            batch_categories = bin_to_index_map[batch_bins]
 
             # Increment counters for each bin
             return bincount(batch_categories, minlength=313)
@@ -72,7 +72,7 @@ class BinnedImageGenerator(DirectoryIterator):
 
         # Discretize other dimensions
         batch_y_bins = find_bin(batch_lab[:, :, :, 1], batch_lab[:, :, :, 2])
-        batch_y_categories = bin_to_index[batch_y_bins]
+        batch_y_categories = bin_to_index_map[batch_y_bins]
 
         # Resample image and generate softmax style encoding
         distributions = zeros((batch.shape[0], 64, 64, 313))
@@ -82,7 +82,6 @@ class BinnedImageGenerator(DirectoryIterator):
                     for x_offset in [0, 1, 2, 3]:
                         for y_offset in [0, 1, 2, 3]:
                             category = batch_y_categories[batch_i, x * 4 + x_offset, y * 4 + y_offset]
-                            assert (category != -1)
                             distributions[batch_i, x, y, category] += 1.0 / 16.0
 
         batch_y = {

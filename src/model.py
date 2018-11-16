@@ -14,7 +14,7 @@ from src.colorful_loss import ColorfulLoss
 from src.dist_to_dist import DistToDist
 from src.dist_to_lab import DistToLab
 from src.gradient_loss import gradient_loss
-from src.lab_bin_converter import index_to_lab
+from src.lab_bin_converter import index_to_lab_map
 from src.util.config import Config
 from src.util.util import Util, identity_loss
 
@@ -88,7 +88,7 @@ def create_model(colorful_loss: ColorfulLoss) -> Tuple[Model, Layer, Layer, Laye
     color_regularizer = ColorRegularizer(name="color_regularizer")([up_sample_colorful, dist_coherent])
 
     # Create lab space images (for comparison and gradient loss)
-    color_map = convert_to_tensor(index_to_lab, dtype=float32)
+    color_map = convert_to_tensor(index_to_lab_map, dtype=float32)
     lab_colorful = DistToLab(color_map, temperature=0.38, name="lab_colorful")([grayscale_input, up_sample_colorful])
     lab_coherent = DistToLab(color_map, name="lab_coherent")([grayscale_input, dist_coherent])
 
