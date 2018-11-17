@@ -5,13 +5,14 @@ import matplotlib.pyplot as plt
 from keras import Model
 from keras_preprocessing.image import ImageDataGenerator
 from numpy import squeeze, zeros, ones, kron
-from skimage.color import lab2rgb
 
 from src.binned_image_generator import BinnedImageGenerator
 from src.colorful_loss import ColorfulLoss
 from src.lab_bin_converter import mode_to_lab
 from src.model import create_model
 from src.util.config import Config
+
+from src.util.util import full_lab2rgb
 
 # Do not use GPU for testing
 print("Disabling GPU")
@@ -43,21 +44,21 @@ def show_predictions(generator, model, index, render_mode=False):
         dist_coherent = mode_to_lab(dist_coherent, original_lab)
 
         axes[0, 0].set_title("Original")
-        axes[0, 0].imshow(lab2rgb(original_lab))
+        axes[0, 0].imshow(full_lab2rgb(original_lab))
         axes[0, 1].set_title("Grayscale")
-        axes[0, 1].imshow(lab2rgb(original_luminance), cmap='gray')
+        axes[0, 1].imshow(full_lab2rgb(original_luminance), cmap='gray')
         axes[0, 2].set_title("Original Discretized")
-        axes[0, 2].imshow(lab2rgb(original_dist))
+        axes[0, 2].imshow(full_lab2rgb(original_dist))
         if not render_mode:
             axes[0, 3].set_title("Colorful")
-            axes[0, 3].imshow(lab2rgb(lab_colorful))
+            axes[0, 3].imshow(full_lab2rgb(lab_colorful))
             axes[0, 4].set_title("Coherent")
-            axes[0, 4].imshow(lab2rgb(lab_coherent))
+            axes[0, 4].imshow(full_lab2rgb(lab_coherent))
         else:
             axes[0, 3].set_title("Colorful Mode")
-            axes[0, 3].imshow(lab2rgb(dist_colorful))
+            axes[0, 3].imshow(full_lab2rgb(dist_colorful))
             axes[0, 4].set_title("Coherent Mode")
-            axes[0, 4].imshow(lab2rgb(dist_coherent))
+            axes[0, 4].imshow(full_lab2rgb(dist_coherent))
 
         original_lab[:, :, 0] = 50
         original_luminance[:, :, 0] = 50
@@ -68,22 +69,22 @@ def show_predictions(generator, model, index, render_mode=False):
         dist_coherent[:, :, 0] = 50
 
         axes[1, 0].set_title("Original L=50")
-        axes[1, 0].imshow(lab2rgb(original_lab))
+        axes[1, 0].imshow(full_lab2rgb(original_lab))
         axes[1, 1].set_title("Grayscale L=50")
-        axes[1, 1].imshow(lab2rgb(original_luminance))
+        axes[1, 1].imshow(full_lab2rgb(original_luminance))
         axes[1, 2].set_title("Original Discretized L=50")
-        axes[1, 2].imshow(lab2rgb(original_dist))
+        axes[1, 2].imshow(full_lab2rgb(original_dist))
 
         if not render_mode:
             axes[1, 3].set_title("Colorful L=50")
-            axes[1, 3].imshow(lab2rgb(lab_colorful))
+            axes[1, 3].imshow(full_lab2rgb(lab_colorful))
             axes[1, 4].set_title("Coherent L=50")
-            axes[1, 4].imshow(lab2rgb(lab_coherent))
+            axes[1, 4].imshow(full_lab2rgb(lab_coherent))
         else:
             axes[1, 3].set_title("Colorful Mode L=50")
-            axes[1, 3].imshow(lab2rgb(dist_colorful))
+            axes[1, 3].imshow(full_lab2rgb(dist_colorful))
             axes[1, 4].set_title("Coherent Mode L=50")
-            axes[1, 4].imshow(lab2rgb(dist_coherent))
+            axes[1, 4].imshow(full_lab2rgb(dist_coherent))
 
         Config.output_folder.mkdir(parents=True, exist_ok=True)
         path = Config.output_folder.joinpath(f"example{index}-{batch_id}.svg")

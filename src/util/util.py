@@ -5,6 +5,7 @@ import tensorflow as tf
 from keras import Model
 from keras.backend import zeros_like
 from keras.callbacks import TensorBoard, ModelCheckpoint
+from numpy import float64
 from skimage.color import rgb2lab, lab2rgb
 
 from src.util.config import Config
@@ -96,3 +97,12 @@ def full_rgb2lab(rgb):
     This convert from [0,255] to proper lab.
     """
     return rgb2lab(rgb / 255.0)
+
+
+def full_lab2rgb(lab):
+    """
+    Old versions of skimage did not handle dtype float correctly.
+    Trick it by passing input as float64 which is technically not float.
+    """
+    return lab2rgb(lab.astype(float64))
+
