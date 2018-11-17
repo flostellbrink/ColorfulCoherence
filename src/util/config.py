@@ -7,6 +7,7 @@ class Config:
     data_folder = root_folder.joinpath("data")
     model_folder = root_folder.joinpath("model")
     log_folder = root_folder.joinpath("logs")
+    output_folder = root_folder.joinpath("output")
     max_epochs = 100
     batch_size = 1
     epsilon = 1e-10
