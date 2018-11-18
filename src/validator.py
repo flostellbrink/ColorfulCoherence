@@ -1,6 +1,13 @@
 from argparse import ArgumentParser
 from os import environ
 
+# Avoid no display exception of matplotlib when no display is set
+# https://stackoverflow.com/questions/37604289/tkinter-tclerror-no-display-name-and-no-display-environment-variable/43592515
+import matplotlib
+if environ.get('DISPLAY','') == '':
+    print('no display found. Using non-interactive Agg backend')
+    matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
 from keras import Model
 from keras_preprocessing.image import ImageDataGenerator
